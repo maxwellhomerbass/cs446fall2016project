@@ -31,28 +31,52 @@ public class my_cluster_filter {
 			c = new cluster(data);
 			c.add(i);
 			clist.add(c);//problem...not being properly added...
-			
-			//c.print();
-			//System.out.println("num clusters: "+ clist.size());
-			//print_all_clusters();
 		}
+		
+		
+		//double orig = sum_orig_rule_vols();
+		//double Hvols = sum_cluster_vols();
+		//System.out.println("total Hvols: " + Hvols + " total rule vols: " + orig);
+		
 		//print_all_clusters();
-		glob_until(500);
+		
+		double [][] results = glob_until(clist.size() - 30);
+		print_results(results);
+		
+		
 	}
+	
+	
 	
 	/** here, k is the final number of clusters that there are.
 	 * assumption: clist is already initialized 
 	 * @throws IOException 
 	 * @throws FileNotFoundException */
-	private static void glob_until(int k){
-		//then combine clusters, one by one, until you are left with only k clusters.
-		while(clist.size() >= k){
-			System.out.println("clist size: " + clist.size() + " total Error: " + total_error());
-			glob();
-			//print_all_clusters();
+	private static double [][] glob_until(int k){
+		
+		//initialize a 2d double array for number of clusters vs. total error (volume), accuracy,
+		//and cost, where cost = error*(num clusters)
+		int num_iterations = clist.size() - k + 1;
+		double [][] results = new double[6][num_iterations];
+		
+		//combine clusters, one by one, until you are left with only k clusters.
+		//NOTICE: the condition in the for loop doesn't use the for loop's iterator
+		//results[4][0]=0;
+		for(int j=0 ; clist.size() > k ; j++){
+			if(j%50==0) System.out.println("clist size: " + clist.size());// + " total Error: " + total_err());
 			
+			results[0][j] = clist.size();
+			results[1][j] = total_err();
+			results[2][j] = total_acc();
+			results[3][j] = results[0][j]*clist.size();//cost function
+			if(j>0) results[4][j] = results[1][j]-results[1][j-1];//dError/d(iteration)
+			//logarithm of results...
+			if(results[4][j] > 0) results[5][j]=Math.log10(results[4][j]);
+			glob();
 		}
-		print_all_clusters();
+		
+		//print_all_clusters();
+		return results;
 	}
 	
 	/**one iteration of the agglomerative or k-means algorithm
@@ -90,7 +114,6 @@ public class my_cluster_filter {
 		return pair;
 	}
 	
-
 	/**gets the hyper volume of an instance
 	 * NOTE: I have made an adjustment to the formula...
 	 * in order to avoid the common case of zero hyper volume from one
@@ -98,12 +121,42 @@ public class my_cluster_filter {
 	 * arbitrary, and artificial, but oh well.*/
 	private static double getInstanceVol(int index){
 		Instance inst = data.instance(index);
-		double s1 = inst.value(1)-inst.value(0)+1;
-		double s2 = inst.value(3)-inst.value(2)+1;
-		double s3 = inst.value(5)-inst.value(4)+1;
-		double s4 = inst.value(7)-inst.value(6)+1;
-		return s1*s2*s3*s4;
+		double vol = inst.value(1)-inst.value(0) + 1;
+		vol *= (inst.value(3)-inst.value(2) + 1);
+		vol *= (inst.value(5)-inst.value(4) + 1);
+		vol *= (inst.value(7)-inst.value(6) + 1);
+//		double s1 = inst.value(1)-inst.value(0) + 1;
+//		double s2 = (inst.value(3)-inst.value(2) + 1);
+//		double s3 = (inst.value(5)-inst.value(4) + 1);
+//		double s4 = (inst.value(7)-inst.value(6) + 1);		
+		//System.out.println(inst.toString());
+		//System.out.println("s1,s2,s3,s4: " + s1 + "," + s2 + "," + s3 + "," + s4);
+		//return s1*s2*s3*s4;
+		return vol;
 	}
+	
+	
+	/**gets the sum of the hypervolumes taken up by all of 
+	 * the clusters. At the start, this should equal the
+	 * sum of the original individual rule volumes*/
+	private static double sum_cluster_vols(){
+		double sumClusterVols=0;
+		for(cluster c : clist){
+			sumClusterVols += c.getHvol();
+			//System.out.println("cluster Hvol: " + Hvol);
+		}
+		return sumClusterVols;
+	}
+	
+	/**gets the sum of the hypervolumes of each rule*/
+	private static double sum_orig_rule_vols(){
+		double sum_orig_vols=0;
+		for(int i=0; i< data.numInstances();i++ ){
+			sum_orig_vols += getInstanceVol(i);
+		}
+		return sum_orig_vols;
+	}
+	
 	//////////////////////////////EVALUATION and DEBUGGING ///////////////////////
 	
 	private static void print_all_clusters(){
@@ -113,16 +166,23 @@ public class my_cluster_filter {
 		}
 	}
 	
-	public static double total_error(){
-		double sumInstanceVols=0,sumClusterVols=0;
-		for(int i=0; i<data.numAttributes();i++ ){
-			sumInstanceVols += getInstanceVol(i);
-		}
-		for(cluster c : clist){
-			sumClusterVols += c.getHvol();
-		}
-		System.out.print("cluster vols: " + sumClusterVols +  " instanceVols: " + sumInstanceVols);
-		return ((sumClusterVols - sumInstanceVols)/sumClusterVols);
+	private static void print_results(double [][] results){
+		System.out.println("errors" + Arrays.toString(results[1]));
+		System.out.println("d Errors/dt : " + Arrays.toString(results[4]));
+		System.out.println("log10( d Errors/dt) :" + Arrays.toString(results[5]));
+		System.out.println("total rule hyper volume: " + sum_orig_rule_vols());
+	}
+	
+	public static double total_err(){
+		double orig = sum_orig_rule_vols();
+		double Hvols = sum_cluster_vols();
+		return Hvols - orig;
+	}
+	
+	public static double total_acc(){
+		double TE = total_err();
+		double Hvols = sum_cluster_vols();
+		return TE/Hvols;
 	}
 
 }

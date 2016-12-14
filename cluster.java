@@ -97,7 +97,7 @@ public class cluster {
 	}
 	
 	public double getMin(int att_index){
-		double min = Integer.MAX_VALUE;
+		double min = Long.MAX_VALUE;
 		for(int i : index_list){
 			Instance inst = ds.instance(i);
 			min = Math.min(min,inst.value(att_index));
@@ -115,11 +115,17 @@ public class cluster {
 	
 	/**get the hypervolume of the index list*/
 	public double getHvol(){
-		double s1 = getMax(1)-getMin(0);
-		double s2 = getMax(3)-getMin(2);
-		double s3 = getMax(5)-getMin(4);
-		double s4 = getMax(7)-getMin(6);
-		return s1*s2*s3*s4;
+//		double s1 = getMax(1)-getMin(0);
+//		double s2 = getMax(3)-getMin(2);
+//		double s3 = getMax(5)-getMin(4);
+//		double s4 = getMax(7)-getMin(6);
+		double vol = bounds[1] - bounds[0] + 1;
+		vol *= (bounds[3] - bounds[2] + 1);
+		vol *= (bounds[5] - bounds[4] + 1);
+		vol *= (bounds[7] - bounds[6] + 1);
+		
+		//System.out.println("Hvol: " + vol);
+		return vol;
 	}
 	
 	public void print(){
