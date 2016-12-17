@@ -2,14 +2,15 @@
 for cs446, UIUC, fall 2016
 Max Bass, netid: mhbass2.
 
-===================        Where to start:       ======================================================================
+===================       Where to start:
 
 This repo is for a personal research project associated with a class. The work was done for that class, and under 
 Prof. Balajee Vanaman (CS dept. UIC)
 
 The main file to look at first is the project report, that was written as a result of the work. Project_report.pdf. There is also a latex source file for this report, included.
 
-=================Brief Summary/Description========================================================================
+
+=================        Brief Summary/Description
 
 Project Goal: 
 use Machine Learning for computer networking applications, by clustering rules so that they could be sorted through more
@@ -27,7 +28,7 @@ It ends up with impractically high error (total new rule area minus old rule are
 to more effectively combine rules though,and thus achieve much higher accuracy. One requirement will probably be highly dense rules in
 rule space. 
 
-===================        Code Files       ======================================================================
+===================        Code Files
 You will need a working weka library to run any of the java files.
 
 my_cluster_filter.java contains the main clustering algorithm, and the main method, so that is the file you run. You can run it in eclipse, or if you compile it in the command line. It depends on the cluster.java file, as well as the weka library. 
